@@ -1,0 +1,38 @@
+version: '3.9'
+name: paddle-ocr-serving
+services:
+  paddle-ocr-serving:
+    build:
+      context: .
+    image: marcantoine153/paddle-ocr-serving:latest
+    container_name: ocr-serving
+    stdin_open: true
+    tty: true
+    restart: always
+    shm_size: '64g'
+    volumes:
+      - ./volume/config.yml:/home/PaddleOCR/deploy/pdserving/config.yml
+    networks: 
+      DL: 
+        ipv4_address: $hostip
+    deploy:
+      resources:
+        reservations:
+          devices:
+              - driver: nvidia
+                device_ids: [$device_ids]
+                capabilities: [gpu]    
+
+
+# 这里默认使用外部定义的network
+networks:
+  DL:
+    external: true
+
+# 如果没有外部定义好的network需要换成下面的代码
+# networks:
+#   DL:
+#     name: DL
+#     ipam:
+#       config:
+#         - subnet: "10.1.1.0/24"

@@ -1,0 +1,47 @@
+FROM paddlecloud/paddleocr:2.6-gpu-cuda11.2-cudnn8-latest
+ENV path=/home/PaddleOCR
+
+RUN <<EOF
+# 下载paddleOCR到 path 文件夹中
+rm -r $path
+cd /home
+git clone --depth=1 https://gitee.com/paddlepaddle/PaddleOCR.git
+EOF
+
+WORKDIR ${path}/deploy/pdserving/
+
+RUN <<EOF
+# 下载whl
+wget https://paddle-serving.bj.bcebos.com/test-dev/whl/paddle_serving_server_gpu-0.8.3.post112-py3-none-any.whl
+wget https://paddle-serving.bj.bcebos.com/test-dev/whl/paddle_serving_client-0.8.3-cp37-none-any.whl
+wget https://paddle-serving.bj.bcebos.com/test-dev/whl/paddle_serving_app-0.8.3-py3-none-any.whl
+# 下载并解压 OCR 文本检测模型
+wget https://paddleocr.bj.bcebos.com/PP-OCRv3/chinese/ch_PP-OCRv3_det_infer.tar -O det_infer.tar && tar -xf det_infer.tar
+# 下载并解压 OCR 文本识别模型
+wget https://paddleocr.bj.bcebos.com/PP-OCRv3/chinese/ch_PP-OCRv3_rec_infer.tar -O rec_infer.tar &&  tar -xf rec_infer.tar
+EOF
+
+# 安装whl
+RUN pip3 install --find-links=/tmp/ *.whl
+
+# 转换模型
+RUN <<EOF
+cd ${path}/PaddleOCR/deploy/pdserving/
+# 转换检测模型
+python3 -m paddle_serving_client.convert --dirname ch_PP-OCRv3_det_infer/ \
+                                         --model_filename inference.pdmodel          \
+                                         --params_filename inference.pdiparams       \
+                                         --serving_server ./ppocr_det_v3_serving/ \
+                                         --serving_client ./ppocr_det_v3_client/
+
+# 转换识别模型
+python3 -m paddle_serving_client.convert --dirname ch_PP-OCRv3_rec_infer/ \
+                                         --model_filename inference.pdmodel          \
+                                         --params_filename inference.pdiparams       \
+                                         --serving_server ./ppocr_rec_v3_serving/  \
+                                         --serving_client ./ppocr_rec_v3_client/
+EOF
+
+
+# 启动服务
+ENTRYPOINT python3 web_service.py --config=config.yml &>log.txt & bash
