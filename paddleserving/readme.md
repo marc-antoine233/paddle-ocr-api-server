@@ -66,8 +66,6 @@ docker compose up -d
 
 ## API 调用
 
-`python` 调用脚本参考 [官网脚本](https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/release/2.7/deploy/pdserving/pipeline_http_client.py)
+`python` 调用脚本参考 [官网脚本](https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/release/2.7/deploy/pdserving/pipeline_http_client.py)，可以参考 [demo](demo/ocr.ipynb)
 
 `python` 调用不需要额外的包，一般只需要保持 python 版本在3.0以上即可
-
-![Alt text](demo/demo.png)
